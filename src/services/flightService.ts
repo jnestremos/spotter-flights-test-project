@@ -12,7 +12,7 @@ class FlightService {
 		params: FlightSearchParams
 	): Promise<FlightSearchResponse> {
 		try {
-			const response = await apiService.get("/v2/flights/searchFlights", {
+			const response = await apiService.get("/flights/searchFlights", {
 				params: {
 					originSkyId: params.origin,
 					destinationSkyId: params.destination,
@@ -101,7 +101,7 @@ class FlightService {
 		params: PriceCalendarParams
 	): Promise<PriceCalendarResponse> {
 		try {
-			const response = await apiService.get("/v1/flights/getPriceCalendar", {
+			const response = await apiService.get("/flights/getPriceCalendar", {
 				params: {
 					originSkyId: params.originSkyId,
 					destinationSkyId: params.destinationSkyId,

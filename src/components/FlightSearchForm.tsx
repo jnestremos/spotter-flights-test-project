@@ -85,6 +85,20 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 		}));
 	}, []);
 
+	// Set return date when departure date changes
+	useEffect(() => {
+		if (formData.date) {
+			const departureDate = new Date(formData.date);
+			const returnDate = new Date(departureDate);
+			returnDate.setDate(departureDate.getDate() + 1);
+
+			setFormData((prev) => ({
+				...prev,
+				returnDate: returnDate.toISOString().split("T")[0],
+			}));
+		}
+	}, [formData.date]);
+
 	// Handle input changes for origin airport
 	useEffect(() => {
 		if (originInputValue.length >= 2) {
