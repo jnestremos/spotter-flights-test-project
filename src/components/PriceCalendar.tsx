@@ -23,13 +23,18 @@ import {
 	TrendingDown,
 	TrendingFlat,
 } from "@mui/icons-material";
-import { format, parseISO, addDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import type {
 	PriceCalendarParams,
 	PriceCalendarResponse,
 	Airport,
 } from "../types/flight";
 import { flightService } from "../services/flightService";
+import {
+	getPriceGroupColor,
+	getPriceGroupIcon,
+	formatPrice,
+} from "../utils/flightUtils";
 
 export const PriceCalendar: React.FC = () => {
 	const [loading, setLoading] = useState(false);
@@ -45,7 +50,7 @@ export const PriceCalendar: React.FC = () => {
 		currency: "USD",
 	});
 
-	// Airport search states
+	// Airport search states for Autocomplete
 	const [originAirports, setOriginAirports] = useState<Airport[]>([]);
 	const [destinationAirports, setDestinationAirports] = useState<Airport[]>([]);
 	const [originSearchLoading, setOriginSearchLoading] = useState(false);
@@ -65,7 +70,8 @@ export const PriceCalendar: React.FC = () => {
 	useEffect(() => {
 		// Set default dates (from today to 30 days from now)
 		const today = new Date();
-		const thirtyDaysFromNow = addDays(today, 30);
+		const thirtyDaysFromNow = new Date();
+		thirtyDaysFromNow.setDate(today.getDate() + 30);
 
 		setFormData((prev) => ({
 			...prev,
@@ -130,7 +136,7 @@ export const PriceCalendar: React.FC = () => {
 				...prev,
 				destinationSkyId: airport.skyId,
 			}));
-			setDestinationInputValue(airport.presentation?.title || "");
+			setDestinationInputValue(airport.presentation?.subtitle || "");
 			setDestinationAirports([]);
 		}
 	};
@@ -217,41 +223,6 @@ export const PriceCalendar: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
-
-	const getPriceGroupColor = (
-		group: string
-	): "success" | "warning" | "error" | "default" => {
-		switch (group) {
-			case "low":
-				return "success";
-			case "medium":
-				return "warning";
-			case "high":
-				return "error";
-			default:
-				return "default";
-		}
-	};
-
-	const getPriceGroupIcon = (group: string): React.ReactElement => {
-		switch (group) {
-			case "low":
-				return <TrendingDown />;
-			case "medium":
-				return <TrendingFlat />;
-			case "high":
-				return <TrendingUp />;
-			default:
-				return <TrendingFlat />;
-		}
-	};
-
-	const formatPrice = (price: number, currency: string) => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: currency || "USD",
-		}).format(price);
 	};
 
 	return (
@@ -444,8 +415,6 @@ export const PriceCalendar: React.FC = () => {
 								const isToday =
 									format(date, "yyyy-MM-dd") ===
 									format(new Date(), "yyyy-MM-dd");
-								const isCurrentYear =
-									date.getFullYear() === new Date().getFullYear();
 
 								return (
 									<Grid item xs={6} sm={4} md={3} lg={2} key={dayData.day}>
@@ -458,7 +427,7 @@ export const PriceCalendar: React.FC = () => {
 											}}
 										>
 											<Typography variant="caption" display="block">
-												{format(date, isCurrentYear ? "MMM d" : "MMM d, yyyy")}
+												{format(date, "MMM d")}
 											</Typography>
 											<Typography
 												variant="caption"

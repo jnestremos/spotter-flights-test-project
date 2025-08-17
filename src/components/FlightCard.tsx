@@ -10,6 +10,17 @@ import {
 } from "@mui/material";
 import { AccessTime } from "@mui/icons-material";
 import type { FlightOffer, FlightLeg, FlightSegment } from "../types/flight";
+import {
+	formatTime,
+	formatDate,
+	formatDuration,
+	getDayIndicator,
+} from "../utils/dateUtils";
+import {
+	getStopsText,
+	calculateTotalDuration,
+	getAirlineNames,
+} from "../utils/flightUtils";
 
 interface FlightCardProps {
 	flight: FlightOffer;
@@ -23,76 +34,6 @@ interface SegmentAirport {
 	id: string;
 	name: string;
 }
-
-// Helper functions
-const formatTime = (timeString: string): string => {
-	try {
-		const date = new Date(timeString);
-		return date.toLocaleTimeString("en-US", {
-			hour: "2-digit",
-			minute: "2-digit",
-			hour12: true,
-		});
-	} catch {
-		return timeString;
-	}
-};
-
-const formatDuration = (minutes: number): string => {
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
-	return `${hours}h ${mins}m`;
-};
-
-const getStopsText = (stopCount: number): string => {
-	if (stopCount === 0) return "Direct";
-	if (stopCount === 1) return "1 stop";
-	return `${stopCount} stops`;
-};
-
-const getDayIndicator = (
-	departureTime: string,
-	arrivalTime: string
-): string | null => {
-	try {
-		const departure = new Date(departureTime);
-		const arrival = new Date(arrivalTime);
-
-		// Compare calendar days
-		const departureDay = new Date(
-			departure.getFullYear(),
-			departure.getMonth(),
-			departure.getDate()
-		);
-		const arrivalDay = new Date(
-			arrival.getFullYear(),
-			arrival.getMonth(),
-			arrival.getDate()
-		);
-
-		const diffTime = arrivalDay.getTime() - departureDay.getTime();
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-		if (diffDays > 0) {
-			return `+${diffDays} day${diffDays > 1 ? "s" : ""}`;
-		}
-		return null;
-	} catch {
-		return null;
-	}
-};
-
-const formatDate = (timeString: string): string => {
-	try {
-		const date = new Date(timeString);
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-		});
-	} catch {
-		return "";
-	}
-};
 
 // Sub-components
 const AirportDisplay: React.FC<{
@@ -210,13 +151,8 @@ const FlightLegDisplay: React.FC<{ leg: FlightLeg }> = ({ leg }) => {
 };
 
 export const FlightCard: React.FC<FlightCardProps> = ({ flight }) => {
-	const totalDuration =
-		flight.legs?.reduce((sum, leg) => sum + (leg.durationInMinutes || 0), 0) ||
-		0;
-	const airlineNames =
-		flight.legs?.[0]?.carriers?.marketing
-			?.map((carrier) => carrier.name)
-			.join(", ") || "Unknown";
+	const totalDuration = calculateTotalDuration(flight.legs);
+	const airlineNames = getAirlineNames(flight.legs);
 
 	return (
 		<Card sx={{ mb: 2 }}>

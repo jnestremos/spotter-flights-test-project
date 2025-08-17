@@ -14,6 +14,7 @@ import {
 import { Search, FlightTakeoff, FlightLand } from "@mui/icons-material";
 import { debounce } from "@mui/material/utils";
 import type { FlightSearchParams, Airport } from "../types/flight";
+import { getTomorrowDate, addDaysToDate } from "../utils/dateUtils";
 
 interface FlightSearchFormProps {
 	onSearch: (params: FlightSearchParams) => void;
@@ -77,24 +78,19 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 
 	useEffect(() => {
 		// Set default date to tomorrow
-		const tomorrow = new Date();
-		tomorrow.setDate(tomorrow.getDate() + 1);
 		setFormData((prev) => ({
 			...prev,
-			date: tomorrow.toISOString().split("T")[0],
+			date: getTomorrowDate(),
 		}));
 	}, []);
 
 	// Set return date when departure date changes
 	useEffect(() => {
 		if (formData.date) {
-			const departureDate = new Date(formData.date);
-			const returnDate = new Date(departureDate);
-			returnDate.setDate(departureDate.getDate() + 1);
-
+			const returnDate = addDaysToDate(formData.date, 1);
 			setFormData((prev) => ({
 				...prev,
-				returnDate: returnDate.toISOString().split("T")[0],
+				returnDate,
 			}));
 		}
 	}, [formData.date]);
@@ -185,15 +181,9 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 
 	const handleOriginChange = (value: Airport | null) => {
 		if (value) {
-			// Extract skyId and entityId
-			const skyId =
-				value.skyId ||
-				value.relevantFlightParams?.skyId ||
-				value.navigation?.entityId;
-			const entityId =
-				value.entityId ||
-				value.relevantFlightParams?.entityId ||
-				value.navigation?.entityId;
+			// The Airport interface has skyId and entityId as direct properties
+			const skyId = value.skyId;
+			const entityId = value.entityId;
 
 			if (skyId && entityId) {
 				setFormData((prev) => ({
@@ -202,7 +192,13 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 					originEntityId: entityId,
 				}));
 				setOriginInputValue(value.presentation?.title || "");
+				console.log("Origin set:", {
+					skyId,
+					entityId,
+					title: value.presentation?.title,
+				});
 			} else {
+				console.error("Missing skyId or entityId for origin:", value);
 				// Clear form data if required values are missing
 				setFormData((prev) => ({
 					...prev,
@@ -222,15 +218,9 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 
 	const handleDestinationChange = (value: Airport | null) => {
 		if (value) {
-			// Extract skyId and entityId
-			const skyId =
-				value.skyId ||
-				value.relevantFlightParams?.skyId ||
-				value.navigation?.entityId;
-			const entityId =
-				value.entityId ||
-				value.relevantFlightParams?.entityId ||
-				value.navigation?.entityId;
+			// The Airport interface has skyId and entityId as direct properties
+			const skyId = value.skyId;
+			const entityId = value.entityId;
 
 			if (skyId && entityId) {
 				setFormData((prev) => ({
@@ -239,7 +229,13 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 					destinationEntityId: entityId,
 				}));
 				setDestinationInputValue(value.presentation?.title || "");
+				console.log("Destination set:", {
+					skyId,
+					entityId,
+					title: value.presentation?.title,
+				});
 			} else {
+				console.error("Missing skyId or entityId for destination:", value);
 				// Clear form data if required values are missing
 				setFormData((prev) => ({
 					...prev,
@@ -259,12 +255,41 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (formData.origin && formData.destination && formData.date) {
+		if (
+			formData.origin &&
+			formData.destination &&
+			formData.originEntityId &&
+			formData.destinationEntityId &&
+			formData.date
+		) {
 			onSearch(formData);
+		} else {
+			console.error("Form submission blocked - missing required fields:", {
+				origin: formData.origin,
+				destination: formData.destination,
+				originEntityId: formData.originEntityId,
+				destinationEntityId: formData.destinationEntityId,
+				date: formData.date,
+			});
 		}
 	};
 
-	const isFormValid = formData.origin && formData.destination && formData.date;
+	const isFormValid =
+		formData.origin &&
+		formData.destination &&
+		formData.originEntityId &&
+		formData.destinationEntityId &&
+		formData.date;
+
+	// Debug logging
+	console.log("Form validation check:", {
+		origin: formData.origin,
+		destination: formData.destination,
+		originEntityId: formData.originEntityId,
+		destinationEntityId: formData.destinationEntityId,
+		date: formData.date,
+		isValid: isFormValid,
+	});
 
 	return (
 		<Box component="form" onSubmit={handleSubmit} sx={{ mb: 4 }}>
