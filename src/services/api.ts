@@ -2,7 +2,7 @@ import axios from "axios";
 import type { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 const apiService: AxiosInstance = axios.create({
-	baseURL: import.meta.env.VITE_RAPIDAPI_BASE_URL + "/api/v1",
+	baseURL: import.meta.env.VITE_RAPIDAPI_BASE_URL + "/api",
 	headers: {
 		"X-RapidAPI-Key": import.meta.env.VITE_RAPIDAPI_KEY,
 		"X-RapidAPI-Host": import.meta.env.VITE_RAPIDAPI_HOST,

@@ -45,8 +45,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 		adults: 1,
 		children: 0,
 		infants: 0,
-		cabinClass: "ECONOMY",
-		sortBy: "BEST",
+		cabinClass: "economy",
+		sortBy: "best",
 		currency: "USD",
 		market: "US",
 		countryCode: "US",
@@ -62,6 +62,10 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 	const destinationSearchTimeoutRef = useRef<
 		ReturnType<typeof setTimeout> | undefined
 	>(undefined);
+
+	// Flag to prevent API calls when programmatically setting values
+	const isSettingOriginRef = useRef(false);
+	const isSettingDestinationRef = useRef(false);
 
 	// Debounced search functions
 	const debouncedOriginSearch = useRef(
@@ -97,7 +101,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 
 	// Handle input changes for origin airport
 	useEffect(() => {
-		if (originInputValue.length >= 2) {
+		// Only trigger search if not programmatically setting value
+		if (!isSettingOriginRef.current && originInputValue.length >= 2) {
 			// Clear previous timeout
 			if (originSearchTimeoutRef.current) {
 				clearTimeout(originSearchTimeoutRef.current);
@@ -118,7 +123,8 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 
 	// Handle input changes for destination airport
 	useEffect(() => {
-		if (destinationInputValue.length >= 2) {
+		// Only trigger search if not programmatically setting value
+		if (!isSettingDestinationRef.current && destinationInputValue.length >= 2) {
 			// Clear previous timeout
 			if (destinationSearchTimeoutRef.current) {
 				clearTimeout(destinationSearchTimeoutRef.current);
@@ -152,15 +158,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 		value: string
 	) => {
 		setOriginInputValue(value);
-
-		// Clear the selected airport and form data if user types something completely different
-		if (formData.origin && !value.includes(formData.origin)) {
-			setFormData((prev) => ({
-				...prev,
-				origin: "",
-				originEntityId: "",
-			}));
-		}
+		// Removed the problematic logic that was clearing form data
 	};
 
 	const handleDestinationInputChange = (
@@ -168,30 +166,47 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 		value: string
 	) => {
 		setDestinationInputValue(value);
-
-		// Clear the selected airport and form data if user types something completely different
-		if (formData.destination && !value.includes(formData.destination)) {
-			setFormData((prev) => ({
-				...prev,
-				destination: "",
-				destinationEntityId: "",
-			}));
-		}
+		// Removed the problematic logic that was clearing form data
 	};
 
 	const handleOriginChange = (value: Airport | null) => {
+		console.log("=== ORIGIN AIRPORT SELECTION ===");
+		console.log("Selected value:", value);
+		console.log("Current formData before change:", formData);
+
 		if (value) {
 			// The Airport interface has skyId and entityId as direct properties
 			const skyId = value.skyId;
 			const entityId = value.entityId;
 
+			console.log("Airport value details:");
+			console.log("- skyId:", skyId);
+			console.log("- entityId:", entityId);
+			console.log("- presentation:", value.presentation);
+
 			if (skyId && entityId) {
-				setFormData((prev) => ({
-					...prev,
-					origin: skyId,
-					originEntityId: entityId,
-				}));
+				setFormData((prev) => {
+					const newFormData = {
+						...prev,
+						origin: skyId,
+						originEntityId: entityId,
+					};
+					console.log("Setting form data for origin...");
+					console.log("New form data:", newFormData);
+					return newFormData;
+				});
+
+				// Set flag to prevent API call
+				isSettingOriginRef.current = true;
+
+				// Set input value (this will trigger useEffect but flag will block API call)
 				setOriginInputValue(value.presentation?.title || "");
+
+				// Reset flag after a short delay
+				setTimeout(() => {
+					isSettingOriginRef.current = false;
+				}, 100);
+
 				console.log("Origin set:", {
 					skyId,
 					entityId,
@@ -214,21 +229,47 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 				originEntityId: "",
 			}));
 		}
+		console.log("=== END ORIGIN SELECTION ===");
 	};
 
 	const handleDestinationChange = (value: Airport | null) => {
+		console.log("=== DESTINATION AIRPORT SELECTION ===");
+		console.log("Selected value:", value);
+		console.log("Current formData before change:", formData);
+
 		if (value) {
 			// The Airport interface has skyId and entityId as direct properties
 			const skyId = value.skyId;
 			const entityId = value.entityId;
 
+			console.log("Airport value details:");
+			console.log("- skyId:", skyId);
+			console.log("- entityId:", entityId);
+			console.log("- presentation:", value.presentation);
+
 			if (skyId && entityId) {
-				setFormData((prev) => ({
-					...prev,
-					destination: skyId,
-					destinationEntityId: entityId,
-				}));
+				setFormData((prev) => {
+					const newFormData = {
+						...prev,
+						destination: skyId,
+						destinationEntityId: entityId,
+					};
+					console.log("Setting form data for destination...");
+					console.log("New form data:", newFormData);
+					return newFormData;
+				});
+
+				// Set flag to prevent API call
+				isSettingDestinationRef.current = true;
+
+				// Set input value (this will trigger useEffect but flag will block API call)
 				setDestinationInputValue(value.presentation?.title || "");
+
+				// Reset flag after a short delay
+				setTimeout(() => {
+					isSettingDestinationRef.current = false;
+				}, 100);
+
 				console.log("Destination set:", {
 					skyId,
 					entityId,
@@ -251,6 +292,7 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 				destinationEntityId: "",
 			}));
 		}
+		console.log("=== END DESTINATION SELECTION ===");
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -432,10 +474,10 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 							label="Cabin Class"
 							onChange={(e) => handleInputChange("cabinClass", e.target.value)}
 						>
-							<MenuItem value="ECONOMY">Economy</MenuItem>
-							<MenuItem value="PREMIUM_ECONOMY">Premium Economy</MenuItem>
-							<MenuItem value="BUSINESS">Business</MenuItem>
-							<MenuItem value="FIRST">First</MenuItem>
+							<MenuItem value="economy">Economy</MenuItem>
+							<MenuItem value="premium_economy">Premium Economy</MenuItem>
+							<MenuItem value="business">Business</MenuItem>
+							<MenuItem value="first">First</MenuItem>
 						</Select>
 					</FormControl>
 				</Grid>
@@ -449,11 +491,11 @@ export const FlightSearchForm: React.FC<FlightSearchFormProps> = ({
 							label="Sort By"
 							onChange={(e) => handleInputChange("sortBy", e.target.value)}
 						>
-							<MenuItem value="BEST">Best</MenuItem>
-							<MenuItem value="PRICE">Price</MenuItem>
-							<MenuItem value="DURATION">Duration</MenuItem>
-							<MenuItem value="DEPARTURE_TIME">Departure Time</MenuItem>
-							<MenuItem value="ARRIVAL_TIME">Arrival Time</MenuItem>
+							<MenuItem value="best">Best</MenuItem>
+							<MenuItem value="price">Price</MenuItem>
+							<MenuItem value="duration">Duration</MenuItem>
+							<MenuItem value="departure_time">Departure Time</MenuItem>
+							<MenuItem value="arrival_time">Arrival Time</MenuItem>
 						</Select>
 					</FormControl>
 				</Grid>
